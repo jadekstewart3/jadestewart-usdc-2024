@@ -18,17 +18,42 @@
  * @param {JSON} scannedTextObj - A JSON object representing the scanned text.
  * @returns {JSON} - Search results.
  * */ 
- function findSearchTermInBooks(searchTerm, scannedTextObj) {
-    /** You will need to implement your search and 
-     * return the appropriate object here. */
+// iterate over the scannedTextObj["Content"]
+// iterate over the text
+// for each line, check if the searchTerm is in the line
+//if it is place the ISBN page and line number in the results array in a JSON object
+//what happnens if the text is hyphenated, but it is the search term? how do you account for that?
 
-    var result = {
-        "SearchTerm": "",
-        "Results": []
-    };
+ function findSearchTermInBooks(searchTerm, scannedTextObj) {
+    const results = [];
+    scannedTextObj.forEach(book =>{
+        book.Content.forEach(line =>{
+            if(line.Text.includes(searchTerm)){
+                results.push({
+                    ISBN: book.ISBN,
+                    Page: line.Page,
+                    Line: line.Line
+                })
+            }
+        })
+    })
+    return {
+        SearchTerm: searchTerm,
+        Results: results
+    }
+  }
+
+
+      // let text_object = scannedTextObj;
+      // console.log(text_object[0].Content[0].Text.split(" "));
+
+//     var result = {
+//         "SearchTerm": "",
+//         "Results": []
+//     };
     
-    return result; 
-}
+//     return result; 
+// }
 
 /** Example input object. */
 const twentyLeaguesIn = [
