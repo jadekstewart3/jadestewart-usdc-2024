@@ -24,36 +24,93 @@
 //if it is place the ISBN page and line number in the results array in a JSON object
 //what happnens if the text is hyphenated, but it is the search term? how do you account for that?
 
- function findSearchTermInBooks(searchTerm, scannedTextObj) {
-    const results = [];
-    scannedTextObj.forEach(book =>{
-        book.Content.forEach(line =>{
-            if(line.Text.includes(searchTerm)){
-                results.push({
-                    ISBN: book.ISBN,
-                    Page: line.Page,
-                    Line: line.Line
-                })
-            }
-        })
-    })
-    return {
-        SearchTerm: searchTerm,
-        Results: results
-    }
-  }
+//  function findSearchTermInBooks(searchTerm, scannedTextObj) {
+//     const results = [];
+//     scannedTextObj.forEach((book) => {
+//       book.Content.forEach((contentHash, index, contentArray) => {
+//         const currentText = contentHash.Text;
+//         console.log(currentText);
+//           if(currentText.endsWith("-") && index < contentArray.length) {
+//             const nextText = contentArray[index + 1].Text;
+//             const nextWord = nextText.trim() !== '' ? nextText.split(" ")[0] : nextText;
+//             const unhyphenatedLine = currentText.replace(/-$/, "") + nextWord;
+//             console.log(unhyphenatedLine);
+//             if(unhyphenatedLine.includes(searchTerm)){
+//             results.push({
+//               ISBN: book.ISBN,
+//               Page: contentHash.Page,
+//               Line: contentHash.Line
+//             }) && results.push({
+//               ISBN: book.ISBN,
+//               Page: contentArray[index + 1].Page,
+//               Line: contentArray[index + 1].Line
+//             });
+//           }
+//         } else if (currentText.includes(searchTerm)) {
+//           results.push({
+//             ISBN: book.ISBN,
+//             Page: contentHash.Page,
+//             Line: contentHash.Line
+//           });
+//         }
+//       });
+//     });
+//     return {
+//         SearchTerm: searchTerm,
+//         Results: results
+//     }
+//   }
+
+function findSearchTermInBooks(searchTerm, scannedTextObj) {
+  const results = [];
+
+  scannedTextObj.forEach((book) => {
+    book.Content.forEach((contentHash, index, contentArray) => {
+      const currentTextArray = contentHash.Text.split(" ");
+      const lastWord = currentTextArray[currentTextArray.length - 1].trim();
+      if (currentTextArray.includes(searchTerm)) {
+        results.push({
+          ISBN: book.ISBN,
+          Page: contentHash.Page,
+          Line: contentHash.Line
+        });
+      } else if (
+        lastWord.endsWith("-") && index < contentArray.length
+      ) {
+        const nextTextArray = contentArray[index + 1].Text.split(" ");
+        const nextWord = nextTextArray[0].trim();
+        const unhyphenatedWord = lastWord.replace(/-$/, "") + nextWord;
+
+        if (unhyphenatedWord === searchTerm) {
+          results.push({
+            ISBN: book.ISBN,
+            Page: contentHash.Page,
+            Line: contentHash.Line
+          });
+          results.push({
+            ISBN: book.ISBN,
+            Page: contentArray[index + 1].Page,
+            Line: contentArray[index + 1].Line
+          });
+        }
+      }
+    });
+  });
+
+  return {
+    SearchTerm: searchTerm,
+    Results: results
+  };
+}
 
 
-      // let text_object = scannedTextObj;
-      // console.log(text_object[0].Content[0].Text.split(" "));
-
-//     var result = {
-//         "SearchTerm": "",
-//         "Results": []
-//     };
-    
-//     return result; 
-// }
+/**if the last element includes a hyphen
+ * remove the hyphen from the last element
+ * add the next element to the last element
+ * and check if the searchTerm is in the new last element
+ * if its true, add the ISBN, page and line number to the results array plus the next index
+ * if its false, check the next element
+ */
 
 /** Example input object. */
 const twentyLeaguesIn = [
@@ -126,4 +183,25 @@ if (test2result.Results.length == 1) {
     console.log("FAIL: Test 2");
     console.log("Expected:", twentyLeaguesOut.Results.length);
     console.log("Received:", test2result.Results.length);
+}
+
+/**  test to ensure we do not return results for substrings. */
+const test3result = findSearchTermInBooks("simp", twentyLeaguesIn); 
+if (test3result.Results.length == 0) {
+    console.log("PASS: Test 3");
+} else {
+    console.log("FAIL: Test 3");
+    console.log("Expected:", twentyLeaguesOut.Results.length);
+    console.log("Received:", test3result.Results.length);
+
+}
+/** test to handle hyphenated words */
+const test4result = findSearchTermInBooks("darkness", twentyLeaguesIn); 
+if (test4result.Results.length == 2) {
+    console.log("PASS: Test 4");
+} else {
+    console.log("FAIL: Test 4");
+    console.log("Expected:", twentyLeaguesOut.Results.length);
+    console.log("Received:", test4result.Results.length);
+  console.log(test4result.Results);
 }
