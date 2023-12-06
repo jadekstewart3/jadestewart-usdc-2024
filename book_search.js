@@ -18,51 +18,62 @@
  * @param {JSON} scannedTextObj - A JSON object representing the scanned text.
  * @returns {JSON} - Search results.
  * */ 
+
+//**Initial thoughts */
 // iterate over the scannedTextObj["Content"]
 // iterate over the text
 // for each line, check if the searchTerm is in the line
 //if it is place the ISBN page and line number in the results array in a JSON object
 //what happnens if the text is hyphenated, but it is the search term? how do you account for that?
 
-//  function findSearchTermInBooks(searchTerm, scannedTextObj) {
-//     const results = [];
-//     scannedTextObj.forEach((book) => {
-//       book.Content.forEach((contentHash, index, contentArray) => {
-//         const currentText = contentHash.Text;
-//         console.log(currentText);
-//           if(currentText.endsWith("-") && index < contentArray.length) {
-//             const nextText = contentArray[index + 1].Text;
-//             const nextWord = nextText.trim() !== '' ? nextText.split(" ")[0] : nextText;
-//             const unhyphenatedLine = currentText.replace(/-$/, "") + nextWord;
-//             console.log(unhyphenatedLine);
-//             if(unhyphenatedLine.includes(searchTerm)){
-//             results.push({
-//               ISBN: book.ISBN,
-//               Page: contentHash.Page,
-//               Line: contentHash.Line
-//             }) && results.push({
-//               ISBN: book.ISBN,
-//               Page: contentArray[index + 1].Page,
-//               Line: contentArray[index + 1].Line
-//             });
-//           }
-//         } else if (currentText.includes(searchTerm)) {
-//           results.push({
-//             ISBN: book.ISBN,
-//             Page: contentHash.Page,
-//             Line: contentHash.Line
-//           });
-//         }
-//       });
-//     });
-//     return {
-//         SearchTerm: searchTerm,
-//         Results: results
-//     }
-//   }
+//**psudocode for processing hyphenated words */
+/**if the last element includes a hyphen
+ * remove the hyphen from the last element
+ * add the next element to the last element
+ * and check if the searchTerm is in the new last element
+ * if its true, add the ISBN, page and line number to the results array plus the next index
+ * if its false, check the next element
+ */
+
+function identifyAndReplaceHyphenatedWord(lastWord, index, contentArray) {
+  if (lastWord.endsWith("-") && index < contentArray.length) {
+    const nextTextArray = contentArray[index + 1].Text.split(" ");
+    const nextWord = nextTextArray[0].trim();
+    const unhyphenatedWord = lastWord.replace(/-$/, "") + nextWord;
+    return unhyphenatedWord;
+  }
+};
+
+function processHyphenatedWord(lastWord, index, contentArray, contentHash, searchTerm, results, book) {  
+  if (identifyAndReplaceHyphenatedWord(lastWord, index, contentArray) === searchTerm) {
+      results.push({
+        ISBN: book.ISBN,
+        Page: contentHash.Page,
+        Line: contentHash.Line
+      });
+      results.push({
+        ISBN: book.ISBN,
+        Page: contentArray[index + 1].Page,
+        Line: contentArray[index + 1].Line
+      });
+    }
+  }
+
+  function errorHandle(searchTerm, scannedTextObj) {
+    if (searchTerm.length == 0) {
+      return "Search term is empty";
+    } else if (scannedTextObj.length == 0) {
+      return "No books to search";
+    } else if (scannedTextObj[0].Content.length == 0) {
+      return "No content to search";
+    }
+  };
 
 function findSearchTermInBooks(searchTerm, scannedTextObj) {
   const results = [];
+  if (errorHandle(searchTerm, scannedTextObj)) {
+    return errorHandle(searchTerm, scannedTextObj);
+  };
 
   scannedTextObj.forEach((book) => {
     book.Content.forEach((contentHash, index, contentArray) => {
@@ -74,26 +85,9 @@ function findSearchTermInBooks(searchTerm, scannedTextObj) {
           Page: contentHash.Page,
           Line: contentHash.Line
         });
-      } else if (
-        lastWord.endsWith("-") && index < contentArray.length
-      ) {
-        const nextTextArray = contentArray[index + 1].Text.split(" ");
-        const nextWord = nextTextArray[0].trim();
-        const unhyphenatedWord = lastWord.replace(/-$/, "") + nextWord;
-
-        if (unhyphenatedWord === searchTerm) {
-          results.push({
-            ISBN: book.ISBN,
-            Page: contentHash.Page,
-            Line: contentHash.Line
-          });
-          results.push({
-            ISBN: book.ISBN,
-            Page: contentArray[index + 1].Page,
-            Line: contentArray[index + 1].Line
-          });
-        }
-      }
+      } else{
+        processHyphenatedWord(lastWord, index, contentArray, contentHash, searchTerm, results, book)
+      };
     });
   });
 
@@ -102,15 +96,6 @@ function findSearchTermInBooks(searchTerm, scannedTextObj) {
     Results: results
   };
 }
-
-
-/**if the last element includes a hyphen
- * remove the hyphen from the last element
- * add the next element to the last element
- * and check if the searchTerm is in the new last element
- * if its true, add the ISBN, page and line number to the results array plus the next index
- * if its false, check the next element
- */
 
 /** Example input object. */
 const twentyLeaguesIn = [
@@ -136,19 +121,101 @@ const twentyLeaguesIn = [
         ] 
     }
 ]
+
+const twentyLeaguesHyphenated = [
+    {
+        "Title": "Twenty Thousand Leagues Under the Sea",
+        "ISBN": "9780000528531",
+        "Content": [
+            {
+                "Page": 31,
+                "Line": 8,
+                "Text": "now simply went on by her own momentum.  The dark-"
+            },
+            {
+                "Page": 31,
+                "Line": 9,
+                "Text": "ness was then pro-found; and however good the Canadian\'s"
+            },
+            {
+                "Page": 31,
+                "Line": 10,
+                "Text": "eyes were, I asked myself how he had managed to see, and"
+            } 
+        ] 
+    }
+]
+
+const zeroBook = []
+
+const twentyLeaguesNoContent = [
+  {
+    "Title": "Twenty Thousand Leagues Under the Sea",
+    "ISBN": "9780000528531",
+    "Content": []
+  }
+]
     
 /** Example output object */
-const twentyLeaguesOut = {
-    "SearchTerm": "the",
+const twentyLeaguesOut =
+    {
+      "SearchTerm": "the",
     "Results": [
-        {
-            "ISBN": "9780000528531",
-            "Page": 31,
-            "Line": 9
-        }
+      {
+          "ISBN": "9780000528531",
+          "Page": 31,
+          "Line": 9
+      }
     ]
-}
+  }
 
+const twentyLeaguesDark =
+  {
+    "SearchTerm": "darkness",
+    "Results": [
+      {
+        "ISBN": "9780000528531",
+        "Page": 31,
+        "Line": 8
+      },
+      {
+        "ISBN": "9780000528531",
+        "Page": 31,
+        "Line": 9
+      }
+    ]
+  }
+
+  const twentyLeaguesHyphenatedOut = {
+    "SearchTerm": "profound",
+    "Results": []
+  }
+
+  const zeroBookOut = {
+    "SearchTerm": "the",
+    "Results": []
+  }
+
+  const caseSensitiveOut = {
+    "SearchTerm": "Momentum",
+    "Results": []
+  }
+
+  const wordNotPresentOut = {
+    "SearchTerm": "cactus",
+    "Results": []
+  }
+
+  const twentyLeaguesThe = {
+      "SearchTerm": "The",
+      "Results": [
+        {
+        "ISBN": "9780000528531",
+        "Page": 31,
+        "Line": 8,
+      }
+    ]
+  }
 /*
  _   _ _   _ ___ _____   _____ _____ ____ _____ ____  
 | | | | \ | |_ _|_   _| |_   _| ____/ ___|_   _/ ___| 
@@ -170,9 +237,11 @@ const test1result = findSearchTermInBooks("the", twentyLeaguesIn);
 if (JSON.stringify(twentyLeaguesOut) === JSON.stringify(test1result)) {
     console.log("PASS: Test 1");
 } else {
-    console.log("FAIL: Test 1");
-    console.log("Expected:", twentyLeaguesOut);
-    console.log("Received:", test1result);
+  console.log("FAIL: Test 1");
+  console.log("Expected:", twentyLeaguesOut);
+  console.log("Received:", test1result);
+  console.log("Actual:", test1result);
+  console.log("Expected:", twentyLeaguesOut);
 }
 
 /** We could choose to check that we get the right number of results. */
@@ -195,6 +264,7 @@ if (test3result.Results.length == 0) {
     console.log("Received:", test3result.Results.length);
 
 }
+
 /** test to handle hyphenated words */
 const test4result = findSearchTermInBooks("darkness", twentyLeaguesIn); 
 if (test4result.Results.length == 2) {
@@ -203,5 +273,74 @@ if (test4result.Results.length == 2) {
     console.log("FAIL: Test 4");
     console.log("Expected:", twentyLeaguesOut.Results.length);
     console.log("Received:", test4result.Results.length);
-  console.log(test4result.Results);
+}
+
+/**test to ensure a hyphenated search term is returning the expected object */
+const test5result = findSearchTermInBooks("darkness", twentyLeaguesIn);
+if (JSON.stringify(twentyLeaguesDark) === JSON.stringify(test5result)) {
+  console.log("PASS: Test 5");
+} else {
+  console.log("FAIL: Test 5");
+  console.log("Expected:", twentyLeaguesDark);
+  console.log("Received:", test5result);
+}
+
+/**test for no books*/
+const test6result = findSearchTermInBooks("the", zeroBook);
+if (test6result == "No books to search") {
+  console.log("PASS: Test 6");
+} else {
+  console.log("FAIL: Test 6");
+  console.log("Expected:", "No books to search");
+  console.log("Received:", test6result);
+}
+
+/**test for books but no content*/
+const test7result = findSearchTermInBooks("the", twentyLeaguesNoContent);
+if (test7result == "No content to search") {
+  console.log("PASS: Test 7");
+} else {
+  console.log("FAIL: Test 7");
+  console.log("Expected:", "No content to search");
+  console.log("Received:", test7result);
+}
+
+/**case sensitive test*/
+const test8result = findSearchTermInBooks("momentum", twentyLeaguesIn);
+if (test8result.Results.length == 0) {
+  console.log("PASS: Test 8");
+} else {
+  console.log("FAIL: Test 8");
+  console.log("Expected:", caseSensitiveOut.Results.length);
+  console.log("Received:", test8result.Results.length);
+}
+
+/**test to make sure we are only dealing with hyphenated words at the end of a sentance*/
+const test9result = findSearchTermInBooks("profound", twentyLeaguesHyphenated);
+if (test9result.Results.length == 0) {
+  console.log("PASS: Test 9");
+} else {
+  console.log("FAIL: Test 9");
+  console.log("Expected:", twentyLeaguesHyphenated.Results.length);
+  console.log("Received:", test9result.Results.length);
+}
+
+/**test for word that doesnt exist in the text*/
+const test10result = findSearchTermInBooks("cactus", twentyLeaguesIn);
+if (test10result.Results.length == 0) {
+  console.log("PASS: Test 10");
+} else {
+  console.log("FAIL: Test 10");
+  console.log("Expected:", wordNotPresentOut.Results.length);
+  console.log("Received:", test10result.Results.length);
+}
+
+/**test for The not the*/
+const test11result = findSearchTermInBooks("The", twentyLeaguesIn);
+if (JSON.stringify(twentyLeaguesThe) === JSON.stringify(test11result)) {
+  console.log("PASS: Test 11");
+} else {
+  console.log("FAIL: Test 11");
+  console.log("Expected:", twentyLeaguesThe);
+  console.log("Received:", test11result);
 }
