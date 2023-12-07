@@ -59,15 +59,20 @@ function processHyphenatedWord(lastWord, index, contentArray, contentHash, searc
     }
   }
 
-  function errorHandle(searchTerm, scannedTextObj) {
-    if (scannedTextObj.length == 0 || scannedTextObj[0].Content.length == 0) {
-      return { SearchTerm: searchTerm,
-                Results: []
-              };
-    } else if (searchTerm == "") {
-      return "Please enter a search term."
+ function errorHandle(searchTerm, scannedTextObj) {
+  if (scannedTextObj.length === 0 || scannedTextObj.every(obj => obj.Content.length === 0)) {
+    return {
+      SearchTerm: searchTerm,
+      Results: []
     };
-  };
+  } else if (searchTerm === "") {
+    return {
+      Error: "Please enter a search term",
+      Results: []
+    };
+  }
+}
+
 
 function findSearchTermInBooks(searchTerm, scannedTextObj) {
   const results = [];
@@ -117,6 +122,80 @@ const twentyLeaguesIn = [
                 "Page": 31,
                 "Line": 10,
                 "Text": "eyes were, I asked myself how he had managed to see, and"
+            } 
+        ] 
+    }
+]
+const testBooksIn = [
+    {
+        "Title": "Test book Title",
+        "ISBN": "8680000528532",
+        "Content": [
+            {
+                "Page": 10,
+                "Line": 10,
+                "Text": "now simply went on by her own momentum.  The blinding"
+            },
+            {
+                "Page": 10,
+                "Line": 11,
+                "Text": "light was then profound; and however good the dog's"
+            },
+            {
+                "Page": 10,
+                "Line": 12,
+                "Text": "eyes were, I asked myself how he had managed to see the flowers?"
+            } 
+        ] 
+    },
+
+    {
+        "Title": "Test book Title Two",
+        "ISBN": "878111054532",
+        "Content": [
+            {
+                "Page": 13,
+                "Line": 10,
+            "Text": "The clock struck thirteen, and Winston Smith, his chin nuzzled into his"
+            },
+            {
+                "Page": 13,
+                "Line": 11,
+                "Text": "an effort to escape the vile wind, slipped quickly through the glass"
+            },
+            {
+                "Page": 14,
+                "Line": 1,
+                "Text": "doors of Victory Mansions, though not quickly enough to prevent a"
+            } 
+        ] 
+    }
+]
+const testBooksSomeNoContentIn = [
+    {
+        "Title": "Test book Title",
+        "ISBN": "8680000528532",
+        "Content": [] 
+    },
+
+    {
+        "Title": "Test book Title Two",
+        "ISBN": "878111054532",
+        "Content": [
+            {
+                "Page": 13,
+                "Line": 10,
+            "Text": "The clock struck thirteen, and Winston Smith, his chin nuzzled into his"
+            },
+            {
+                "Page": 13,
+                "Line": 11,
+                "Text": "an effort to escape the vile wind, slipped quickly through the glass"
+            },
+            {
+                "Page": 14,
+                "Line": 1,
+                "Text": "doors of Victory Mansions, though not quickly enough to prevent a"
             } 
         ] 
     }
@@ -221,6 +300,11 @@ const twentyLeaguesDark =
       }
     ]
   }
+
+const noSearchTermObj = {
+  Error: "Please enter a search term",
+  Results: []
+}
 /*
  _   _ _   _ ___ _____   _____ _____ ____ _____ ____  
 | | | | \ | |_ _|_   _| |_   _| ____/ ___|_   _/ ___| 
@@ -352,10 +436,31 @@ if (JSON.stringify(twentyLeaguesThe) === JSON.stringify(test11result)) {
 
 /**test for empty search term */
 const test12result = findSearchTermInBooks("", twentyLeaguesIn);
-if (test12result == "Please enter a search term.") {
+if (JSON.stringify(test12result) == JSON.stringify(noSearchTermObj)) {
   console.log("PASS: Test 12");
 } else {
   console.log("FAIL: Test 12");
-  console.log("Expected:", "Please enter a search term.");
+  console.log("Expected:", noSearchTermObj);
   console.log("Received:", test12result);
+}
+
+/** test to ensure multiple books with scanned text will return the correct results */
+const test13result = findSearchTermInBooks("the", testBooksIn);
+if (test13result.Results.length == 3) {
+  console.log("PASS: Test 13");
+} else {
+  console.log("FAIL: Test 13");
+  console.log("Expected:", 3);
+  console.log("Received:", test13result.Results.length);
+}
+
+/** test to ensure error handling one book with content and one without is returning results from the book with content */
+const test14result = findSearchTermInBooks("the", testBooksSomeNoContentIn);
+if (test14result.Results.length == 1) {
+  console.log("PASS: Test 14");
+} else {
+  console.log("FAIL: Test 14");
+  console.log("Expected:", 2);
+  console.log("Received:", test14result.Results.length);
+  console.log("Actual:", test14result.Results);
 }
