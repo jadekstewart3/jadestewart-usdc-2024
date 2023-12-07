@@ -60,13 +60,13 @@ function processHyphenatedWord(lastWord, index, contentArray, contentHash, searc
   }
 
   function errorHandle(searchTerm, scannedTextObj) {
-    if (searchTerm.length == 0) {
-      return "Search term is empty";
-    } else if (scannedTextObj.length == 0) {
-      return "No books to search";
-    } else if (scannedTextObj[0].Content.length == 0) {
-      return "No content to search";
-    }
+    if (scannedTextObj.length == 0 || scannedTextObj[0].Content.length == 0) {
+      return { SearchTerm: searchTerm,
+                Results: []
+              };
+    } else if (searchTerm == "") {
+      return "Please enter a search term."
+    };
   };
 
 function findSearchTermInBooks(searchTerm, scannedTextObj) {
@@ -196,6 +196,11 @@ const twentyLeaguesDark =
     "Results": []
   }
 
+  const noResultsOut = {
+    "SearchTerm": 'the',
+    "Results": []
+  }
+
   const caseSensitiveOut = {
     "SearchTerm": "Momentum",
     "Results": []
@@ -287,21 +292,21 @@ if (JSON.stringify(twentyLeaguesDark) === JSON.stringify(test5result)) {
 
 /**test for no books*/
 const test6result = findSearchTermInBooks("the", zeroBook);
-if (test6result == "No books to search") {
+if (JSON.stringify(test6result) === JSON.stringify(zeroBookOut)) {
   console.log("PASS: Test 6");
 } else {
   console.log("FAIL: Test 6");
-  console.log("Expected:", "No books to search");
-  console.log("Received:", test6result);
+  console.log("Expected:", zeroBookOut);
+  console.log("Received:", test6result); 
 }
 
 /**test for books but no content*/
 const test7result = findSearchTermInBooks("the", twentyLeaguesNoContent);
-if (test7result == "No content to search") {
+if (JSON.stringify(test7result) === JSON.stringify(noResultsOut)) {
   console.log("PASS: Test 7");
 } else {
   console.log("FAIL: Test 7");
-  console.log("Expected:", "No content to search");
+  console.log("Expected:", noResultsOut);
   console.log("Received:", test7result);
 }
 
@@ -343,4 +348,14 @@ if (JSON.stringify(twentyLeaguesThe) === JSON.stringify(test11result)) {
   console.log("FAIL: Test 11");
   console.log("Expected:", twentyLeaguesThe);
   console.log("Received:", test11result);
+}
+
+/**test for empty search term */
+const test12result = findSearchTermInBooks("", twentyLeaguesIn);
+if (test12result == "Please enter a search term.") {
+  console.log("PASS: Test 12");
+} else {
+  console.log("FAIL: Test 12");
+  console.log("Expected:", "Please enter a search term.");
+  console.log("Received:", test12result);
 }
